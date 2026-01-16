@@ -1,4 +1,4 @@
-import riceImg from "@assets/stock_images/korean_white_rice_bo_fc49dcfb.jpg";
+import riceImg from "@assets/image_1768538768095.png";
 import brownRiceImg from "@assets/stock_images/brown_rice_healthy_g_17511ca8.jpg";
 import breadImg from "@assets/stock_images/multigrain_bread_who_6c18bd2e.jpg";
 import sweetPotatoImg from "@assets/stock_images/sweet_potato_korean_e776bb1a.jpg";
