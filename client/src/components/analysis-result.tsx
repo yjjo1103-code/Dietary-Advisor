@@ -4,6 +4,12 @@ import { AlertTriangle, CheckCircle, Info, XCircle, Stethoscope, Activity, Utens
 import { motion } from "framer-motion";
 import { Badge } from "./ui/badge";
 
+import foodImg1 from "@assets/stock_images/korean_food_healthy__e50e48e7.jpg";
+import foodImg2 from "@assets/stock_images/korean_food_healthy__439ee99c.jpg";
+import foodImg3 from "@assets/stock_images/korean_food_healthy__963dea6c.jpg";
+
+const foodImages = [foodImg1, foodImg2, foodImg3];
+
 interface AnalysisResultCardProps {
   result: AnalysisResult;
   onSelectFood?: (foodId: number) => void;
@@ -109,13 +115,26 @@ export function AnalysisResultCard({ result, onSelectFood }: AnalysisResultCardP
       data-testid="analysis-result"
     >
       <Card className={`overflow-hidden border-2 ${config.border} shadow-lg`}>
-        {/* Header Status Banner */}
-        <div className={`${config.color} p-4 text-white flex items-center justify-between`}>
-          <div className="flex items-center gap-3">
-            <Icon className="h-8 w-8" />
-            <div>
-              <h3 className="text-lg font-bold font-display uppercase tracking-wider opacity-90">분석 결과</h3>
-              <p className="text-2xl font-bold leading-none" data-testid="text-status">{config.label}</p>
+        {/* Header with Image */}
+        <div className="relative">
+          <div className="absolute inset-0">
+            <img 
+              src={foodImages[(result.foodName?.length ?? 0) % foodImages.length]} 
+              alt={result.foodName ?? "음식"}
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-transparent" />
+          </div>
+          <div className={`relative p-6 text-white flex items-center justify-between`}>
+            <div className="flex items-center gap-4">
+              <div className={`${config.color} p-3 rounded-xl shadow-lg`}>
+                <Icon className="h-8 w-8" />
+              </div>
+              <div>
+                <h3 className="text-sm font-medium uppercase tracking-wider opacity-80">분석 결과</h3>
+                <p className="text-2xl font-bold leading-tight mt-1" data-testid="text-status">{config.label}</p>
+                <p className="text-lg font-medium opacity-90 mt-1">{result.foodName}</p>
+              </div>
             </div>
           </div>
         </div>

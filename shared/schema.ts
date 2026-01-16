@@ -73,6 +73,7 @@ export type RecommendedFood = z.infer<typeof recommendedFoodSchema>;
 
 // --- Analysis Result Schema ---
 export const analysisResultSchema = z.object({
+  foodName: z.string(), // Name of analyzed food
   status: z.enum(["Safe", "Caution", "Limit"]),
   summary: z.string(), // "Safety: Caution"
   details: z.array(z.string()), // Detailed reasons ["High Potassium...", "High GI..."]

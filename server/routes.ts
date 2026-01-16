@@ -334,6 +334,7 @@ function analyzeFood(profile: PatientProfile, food: FoodItem, allFoods: FoodItem
   }
 
   return {
+    foodName: food.foodName,
     status: finalStatus,
     summary: finalStatus === "Safe" ? "섭취 가능" : (finalStatus === "Caution" ? "주의 필요" : "제한 / 피하세요"),
     details: issues,
