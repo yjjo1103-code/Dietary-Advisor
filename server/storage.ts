@@ -1,10 +1,16 @@
-import { type FoodItem, type InsertFood } from "@shared/schema";
+import { type FoodItem, type InsertFood, type SavedProfile, type InsertSavedProfile, savedProfiles } from "@shared/schema";
+import { db } from "./db";
+import { desc, eq } from "drizzle-orm";
 
 export interface IStorage {
   searchFoods(query: string): Promise<FoodItem[]>;
   getFood(id: number): Promise<FoodItem | undefined>;
   getAllFoods(): Promise<FoodItem[]>;
   createFood(food: InsertFood): Promise<FoodItem>;
+  // Profile operations
+  listProfiles(): Promise<SavedProfile[]>;
+  createProfile(profile: InsertSavedProfile): Promise<SavedProfile>;
+  deleteProfile(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -39,6 +45,21 @@ export class MemStorage implements IStorage {
     const food: FoodItem = { ...insertFood, id, note: insertFood.note || null };
     this.foods.set(id, food);
     return food;
+  }
+
+  // Profile operations using database
+  async listProfiles(): Promise<SavedProfile[]> {
+    return await db.select().from(savedProfiles).orderBy(desc(savedProfiles.createdAt));
+  }
+
+  async createProfile(profile: InsertSavedProfile): Promise<SavedProfile> {
+    const [created] = await db.insert(savedProfiles).values(profile).returning();
+    return created;
+  }
+
+  async deleteProfile(id: number): Promise<boolean> {
+    const result = await db.delete(savedProfiles).where(eq(savedProfiles.id, id)).returning();
+    return result.length > 0;
   }
 
   private initializeData() {

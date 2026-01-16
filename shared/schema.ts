@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, real, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, real, jsonb, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -40,6 +40,26 @@ export const patientProfileSchema = z.object({
 });
 
 export type PatientProfile = z.infer<typeof patientProfileSchema>;
+
+// --- Saved Patient Profile Schema (stored in DB) ---
+export const savedProfiles = pgTable("saved_profiles", {
+  id: serial("id").primaryKey(),
+  profileName: text("profile_name").notNull(),
+  gender: text("gender").notNull(),
+  age: integer("age").notNull(),
+  heightCm: real("height_cm").notNull(),
+  weightKg: real("weight_kg").notNull(),
+  hasDm: integer("has_dm").notNull(), // 0 or 1 for boolean
+  ckdStage: integer("ckd_stage").notNull(),
+  eGFR: real("egfr"),
+  serumPotassium: real("serum_potassium"),
+  hba1c: real("hba1c"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertSavedProfileSchema = createInsertSchema(savedProfiles).omit({ id: true, createdAt: true });
+export type SavedProfile = typeof savedProfiles.$inferSelect;
+export type InsertSavedProfile = z.infer<typeof insertSavedProfileSchema>;
 
 // --- Recommended Food Schema ---
 export const recommendedFoodSchema = z.object({

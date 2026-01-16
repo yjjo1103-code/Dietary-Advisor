@@ -51,6 +51,36 @@ export async function registerRoutes(
     }
   });
 
+  // --- Patient Profiles ---
+  app.get(api.profiles.list.path, async (req, res) => {
+    const profiles = await storage.listProfiles();
+    res.json(profiles);
+  });
+
+  app.post(api.profiles.create.path, async (req, res) => {
+    try {
+      const input = api.profiles.create.input.parse(req.body);
+      const profile = await storage.createProfile(input);
+      res.status(201).json(profile);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({
+          message: err.errors[0].message,
+          field: err.errors[0].path.join('.'),
+        });
+      }
+      throw err;
+    }
+  });
+
+  app.delete(api.profiles.delete.path, async (req, res) => {
+    const deleted = await storage.deleteProfile(Number(req.params.id));
+    if (!deleted) {
+      return res.status(404).json({ message: "프로필을 찾을 수 없습니다" });
+    }
+    res.json({ success: true });
+  });
+
   return httpServer;
 }
 

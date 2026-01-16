@@ -1,6 +1,7 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { api, buildUrl, type AnalysisResponse, type AnalyzeRequest } from "@shared/routes";
-import { type FoodItem } from "@shared/schema";
+import { api, buildUrl } from "@shared/routes";
+import { type FoodItem, type SavedProfile, type InsertSavedProfile, type AnalyzeRequest } from "@shared/schema";
+import { queryClient } from "@/lib/queryClient";
 
 export function useFoods(searchQuery?: string) {
   return useQuery({
@@ -27,10 +28,6 @@ export async function fetchFoodById(id: number): Promise<FoodItem> {
 export function useAnalyzeFood() {
   return useMutation({
     mutationFn: async (data: AnalyzeRequest) => {
-      // Validate input before sending using the shared schema if needed, 
-      // but api.analysis.analyze.input handles it on server. 
-      // Here we trust the type system.
-      
       const res = await fetch(api.analysis.analyze.path, {
         method: api.analysis.analyze.method,
         headers: { "Content-Type": "application/json" },
@@ -50,6 +47,61 @@ export function useAnalyzeFood() {
       }
 
       return api.analysis.analyze.responses[200].parse(await res.json());
+    },
+  });
+}
+
+// --- Profile Hooks ---
+export function useSavedProfiles() {
+  return useQuery({
+    queryKey: [api.profiles.list.path],
+    queryFn: async () => {
+      const res = await fetch(api.profiles.list.path, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch profiles");
+      return res.json() as Promise<SavedProfile[]>;
+    },
+  });
+}
+
+export function useCreateProfile() {
+  return useMutation({
+    mutationFn: async (data: InsertSavedProfile) => {
+      const res = await fetch(api.profiles.create.path, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to save profile");
+      }
+
+      return res.json() as Promise<SavedProfile>;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [api.profiles.list.path] });
+    },
+  });
+}
+
+export function useDeleteProfile() {
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const url = buildUrl(api.profiles.delete.path, { id });
+      const res = await fetch(url, {
+        method: "DELETE",
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to delete profile");
+      }
+
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [api.profiles.list.path] });
     },
   });
 }

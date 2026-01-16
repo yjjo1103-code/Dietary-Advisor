@@ -1,9 +1,19 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { patientProfileSchema, type PatientProfile } from "@shared/schema";
-import { Card, CardHeader, CardTitle, CardContent, Label, Input, Select } from "./ui-kit";
-import { User, Activity } from "lucide-react";
-import { useEffect } from "react";
+import { Card, CardHeader, CardTitle, CardContent, Label, Input, Select, Button } from "./ui-kit";
+import { User, Activity, Save, FolderOpen } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useCreateProfile } from "@/hooks/use-foods";
+import { useToast } from "@/hooks/use-toast";
+import { SavedProfiles } from "./saved-profiles";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface PatientProfileFormProps {
   onProfileChange: (profile: PatientProfile | null) => void;
@@ -11,6 +21,12 @@ interface PatientProfileFormProps {
 }
 
 export function PatientProfileForm({ onProfileChange, className }: PatientProfileFormProps) {
+  const [profileName, setProfileName] = useState("");
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [showLoadDialog, setShowLoadDialog] = useState(false);
+  const { toast } = useToast();
+  const createProfileMutation = useCreateProfile();
+
   const form = useForm<PatientProfile>({
     resolver: zodResolver(patientProfileSchema),
     mode: "onChange",
@@ -45,12 +61,119 @@ export function PatientProfileForm({ onProfileChange, className }: PatientProfil
     return () => subscription.unsubscribe();
   }, [form, onProfileChange]);
 
+  const handleSaveProfile = async () => {
+    if (!profileName.trim()) {
+      toast({
+        title: "이름을 입력하세요",
+        description: "프로필 이름을 입력해주세요.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const currentValues = form.getValues();
+    try {
+      await createProfileMutation.mutateAsync({
+        profileName: profileName.trim(),
+        gender: currentValues.gender,
+        age: currentValues.age,
+        heightCm: currentValues.heightCm,
+        weightKg: currentValues.weightKg,
+        hasDm: currentValues.hasDm ? 1 : 0,
+        ckdStage: currentValues.ckdStage,
+        eGFR: currentValues.eGFR ?? null,
+        serumPotassium: currentValues.serumPotassium ?? null,
+        hba1c: currentValues.hba1c ?? null,
+      });
+
+      toast({
+        title: "프로필 저장됨",
+        description: `"${profileName}" 프로필이 저장되었습니다.`,
+      });
+      setProfileName("");
+      setShowSaveDialog(false);
+    } catch (error) {
+      toast({
+        title: "저장 실패",
+        description: "프로필 저장에 실패했습니다.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleLoadProfile = (profile: PatientProfile) => {
+    form.reset(profile);
+    onProfileChange(profile);
+    setShowLoadDialog(false);
+    toast({
+      title: "프로필 불러옴",
+      description: "저장된 프로필이 적용되었습니다.",
+    });
+  };
+
   return (
     <Card className={className}>
       <CardHeader className="pb-4">
-        <div className="flex items-center gap-2 text-primary">
-          <User className="h-5 w-5" />
-          <CardTitle>환자 프로필</CardTitle>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-primary">
+            <User className="h-5 w-5" />
+            <CardTitle>환자 프로필</CardTitle>
+          </div>
+          <div className="flex gap-1">
+            <Dialog open={showLoadDialog} onOpenChange={setShowLoadDialog}>
+              <DialogTrigger asChild>
+                <Button size="icon" variant="ghost" data-testid="button-load-profile">
+                  <FolderOpen className="h-4 w-4" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>내 프로필</DialogTitle>
+                </DialogHeader>
+                <SavedProfiles onLoadProfile={handleLoadProfile} />
+              </DialogContent>
+            </Dialog>
+
+            <Dialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
+              <DialogTrigger asChild>
+                <Button size="icon" variant="ghost" data-testid="button-save-profile">
+                  <Save className="h-4 w-4" />
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>프로필 저장</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="profile-name">프로필 이름</Label>
+                    <Input
+                      id="profile-name"
+                      placeholder="예: 2026년 1월 검사 결과"
+                      value={profileName}
+                      onChange={(e) => setProfileName(e.target.value)}
+                      data-testid="input-profile-name"
+                    />
+                  </div>
+                  <div className="bg-secondary/50 p-3 rounded-lg text-sm space-y-1">
+                    <p className="font-medium">저장될 데이터:</p>
+                    <p className="text-muted-foreground">
+                      CKD {values.ckdStage}단계, {values.hasDm ? "당뇨O" : "당뇨X"}, 
+                      HbA1c {values.hba1c || "-"}%, eGFR {values.eGFR || "-"}, K {values.serumPotassium || "-"}
+                    </p>
+                  </div>
+                  <Button 
+                    onClick={handleSaveProfile} 
+                    className="w-full"
+                    isLoading={createProfileMutation.isPending}
+                    data-testid="button-confirm-save"
+                  >
+                    저장하기
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
         <p className="text-sm text-muted-foreground">
           분석을 위한 임상 데이터를 입력하세요.

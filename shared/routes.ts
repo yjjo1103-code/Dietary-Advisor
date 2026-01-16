@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { foods, insertFoodSchema, analyzeRequestSchema, analysisResultSchema } from "./schema";
+import { foods, savedProfiles, insertSavedProfileSchema, analyzeRequestSchema, analysisResultSchema } from "./schema";
 
 export const errorSchemas = {
   validation: z.object({
@@ -43,6 +43,32 @@ export const api = {
       responses: {
         200: analysisResultSchema,
         400: errorSchemas.validation,
+        404: errorSchemas.notFound,
+      },
+    },
+  },
+  profiles: {
+    list: {
+      method: "GET" as const,
+      path: "/api/profiles",
+      responses: {
+        200: z.array(z.custom<typeof savedProfiles.$inferSelect>()),
+      },
+    },
+    create: {
+      method: "POST" as const,
+      path: "/api/profiles",
+      input: insertSavedProfileSchema,
+      responses: {
+        201: z.custom<typeof savedProfiles.$inferSelect>(),
+        400: errorSchemas.validation,
+      },
+    },
+    delete: {
+      method: "DELETE" as const,
+      path: "/api/profiles/:id",
+      responses: {
+        200: z.object({ success: z.boolean() }),
         404: errorSchemas.notFound,
       },
     },
