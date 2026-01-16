@@ -125,9 +125,9 @@ const foods: FoodItem[] = initialFoods.map((food, index) => ({
 }));
 
 let profiles: SavedProfile[] = [
-  { id: 1, name: "김철수 (경증 CKD+당뇨)", ckdStage: 2, hasDm: true, hba1c: 7.2, eGFR: 68, serumPotassium: 4.2, createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000) },
-  { id: 2, name: "이영희 (중등도 CKD)", ckdStage: 3, hasDm: false, hba1c: 5.6, eGFR: 42, serumPotassium: 4.8, createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000) },
-  { id: 3, name: "박민호 (중증 CKD+당뇨)", ckdStage: 4, hasDm: true, hba1c: 8.8, eGFR: 22, serumPotassium: 5.2, createdAt: new Date() },
+  { id: 1, name: "김철수 - 2025년 11월", ckdStage: 3, hasDm: true, hba1c: 8.5, eGFR: 38, serumPotassium: 5.1, createdAt: new Date("2025-11-15T10:00:00") },
+  { id: 2, name: "김철수 - 2025년 12월", ckdStage: 3, hasDm: true, hba1c: 7.8, eGFR: 42, serumPotassium: 4.8, createdAt: new Date("2025-12-15T10:00:00") },
+  { id: 3, name: "김철수 - 2026년 1월", ckdStage: 2, hasDm: true, hba1c: 7.2, eGFR: 52, serumPotassium: 4.5, createdAt: new Date("2026-01-15T10:00:00") },
 ];
 let profileIdCounter = 4;
 
