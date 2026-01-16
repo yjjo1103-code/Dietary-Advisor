@@ -2,6 +2,7 @@ import { useState } from "react";
 import { PatientProfileForm } from "@/components/patient-profile-form";
 import { FoodSearch } from "@/components/food-search";
 import { AnalysisResultCard } from "@/components/analysis-result.tsx";
+import { HealthTipsSection } from "@/components/health-tips-section";
 import { useAnalyzeFood, fetchFoodById } from "@/hooks/use-foods";
 import { type PatientProfile, type FoodItem, type AnalysisResult } from "@shared/schema";
 import { Button } from "@/components/ui-kit";
@@ -154,6 +155,11 @@ export default function Dashboard() {
                 </section>
               )}
             </AnimatePresence>
+
+            {/* Health Tips Section */}
+            <section className="bg-white dark:bg-card rounded-2xl p-6 border shadow-sm">
+              <HealthTipsSection />
+            </section>
 
           </div>
         </div>
