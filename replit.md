@@ -71,3 +71,25 @@ Preferred communication style: Simple, everyday language.
 
 ### Fonts
 - Google Fonts: Outfit (display), Inter (body), DM Sans, Fira Code, Geist Mono
+
+## Netlify Deployment
+
+### Configuration
+- **netlify.toml**: Configured for static site with serverless functions
+- **Build Command**: `npm run build` (builds React client to `dist/public`)
+- **Publish Directory**: `dist/public`
+- **Functions Directory**: `netlify/functions`
+
+### Serverless API
+- **Location**: `netlify/functions/api.ts`
+- **Framework**: Express wrapped with `serverless-http`
+- **Endpoints**: Same as main app (`/api/foods`, `/api/analyze`, `/api/profiles`)
+
+### Limitations on Netlify
+- **Profile Persistence**: Profiles are stored in-memory on Netlify, meaning they reset between function invocations. For persistent profiles, set `DATABASE_URL` environment variable pointing to an external PostgreSQL database (like Neon).
+- **Food Database**: 30 Korean foods are hardcoded in the serverless function (no database required)
+
+### Deploy Steps
+1. Connect repository to Netlify
+2. Build settings are auto-detected from `netlify.toml`
+3. Optional: Set `DATABASE_URL` environment variable for profile persistence
