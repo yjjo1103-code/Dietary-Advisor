@@ -12,6 +12,11 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 
+import nutritionImg1 from "@assets/stock_images/healthy_food_salad_v_48214b49.jpg";
+import nutritionImg2 from "@assets/stock_images/healthy_food_salad_v_c0133f4e.jpg";
+import walkingImg from "@assets/stock_images/senior_elderly_perso_a4fb9439.jpg";
+import stretchImg from "@assets/stock_images/stretching_yoga_medi_269bbd7b.jpg";
+
 interface HealthArticle {
   id: string;
   title: string;
@@ -19,6 +24,7 @@ interface HealthArticle {
   category: "diabetes" | "ckd" | "nutrition" | "general";
   readTime: string;
   isNew?: boolean;
+  image?: string;
 }
 
 interface ExerciseTip {
@@ -29,6 +35,7 @@ interface ExerciseTip {
   intensity: "low" | "medium";
   benefits: string[];
   caution?: string;
+  image?: string;
 }
 
 const healthArticles: HealthArticle[] = [
@@ -39,6 +46,7 @@ const healthArticles: HealthArticle[] = [
     category: "diabetes",
     readTime: "5분",
     isNew: true,
+    image: nutritionImg1,
   },
   {
     id: "2",
@@ -47,6 +55,7 @@ const healthArticles: HealthArticle[] = [
     category: "ckd",
     readTime: "4분",
     isNew: true,
+    image: nutritionImg2,
   },
   {
     id: "3",
@@ -79,6 +88,7 @@ const exerciseTips: ExerciseTip[] = [
     duration: "20-30분",
     intensity: "low",
     benefits: ["혈당 상승 억제", "소화 촉진", "심폐 기능 개선"],
+    image: walkingImg,
   },
   {
     id: "2",
@@ -87,6 +97,7 @@ const exerciseTips: ExerciseTip[] = [
     duration: "10-15분",
     intensity: "low",
     benefits: ["혈액순환 개선", "관절 유연성", "피로 감소"],
+    image: stretchImg,
   },
   {
     id: "3",
@@ -159,37 +170,48 @@ export function HealthTipsSection() {
               transition={{ delay: idx * 0.05 }}
             >
               <Card 
-                className="cursor-pointer transition-all hover-elevate"
+                className="cursor-pointer transition-all hover-elevate overflow-hidden"
                 data-testid={`article-card-${article.id}`}
               >
-                <CardContent className="p-4">
-                  <div className="flex items-start gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                        <Badge 
-                          variant="secondary" 
-                          className={`text-xs text-white ${categoryColors[article.category]}`}
-                        >
-                          {categoryLabels[article.category]}
-                        </Badge>
-                        {article.isNew && (
-                          <Badge variant="outline" className="text-xs border-rose-400 text-rose-500">
-                            NEW
-                          </Badge>
-                        )}
-                        <span className="text-xs text-muted-foreground flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          {article.readTime}
-                        </span>
+                <CardContent className="p-0">
+                  <div className="flex">
+                    {article.image && (
+                      <div className="w-24 h-24 shrink-0">
+                        <img 
+                          src={article.image} 
+                          alt={article.title}
+                          className="w-full h-full object-cover"
+                        />
                       </div>
-                      <h4 className="font-medium text-sm text-foreground mb-1">
-                        {article.title}
-                      </h4>
-                      <p className="text-xs text-muted-foreground line-clamp-2">
-                        {article.summary}
-                      </p>
+                    )}
+                    <div className="flex-1 p-4 flex items-start gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                          <Badge 
+                            variant="secondary" 
+                            className={`text-xs text-white ${categoryColors[article.category]}`}
+                          >
+                            {categoryLabels[article.category]}
+                          </Badge>
+                          {article.isNew && (
+                            <Badge variant="outline" className="text-xs border-rose-400 text-rose-500">
+                              NEW
+                            </Badge>
+                          )}
+                          <span className="text-xs text-muted-foreground flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {article.readTime}
+                          </span>
+                        </div>
+                        <h4 className="font-medium text-sm text-foreground mb-1">
+                          {article.title}
+                        </h4>
+                        <p className="text-xs text-muted-foreground line-clamp-2">
+                          {article.summary}
+                        </p>
+                      </div>
+                      <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0 mt-1" />
                     </div>
-                    <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0 mt-1" />
                   </div>
                 </CardContent>
               </Card>
@@ -205,44 +227,57 @@ export function HealthTipsSection() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.05 }}
             >
-              <Card data-testid={`exercise-card-${tip.id}`}>
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <h4 className="font-medium text-sm text-foreground">
-                      {tip.title}
-                    </h4>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <Badge variant="outline" className="text-xs">
-                        {tip.duration}
-                      </Badge>
-                      <Badge 
-                        variant="secondary" 
-                        className={`text-xs ${tip.intensity === "low" ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300"}`}
-                      >
-                        {tip.intensity === "low" ? "저강도" : "중강도"}
-                      </Badge>
+              <Card data-testid={`exercise-card-${tip.id}`} className="overflow-hidden">
+                <CardContent className="p-0">
+                  <div className="flex">
+                    {tip.image && (
+                      <div className="w-24 h-28 shrink-0">
+                        <img 
+                          src={tip.image} 
+                          alt={tip.title}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
+                    <div className="flex-1 p-4">
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <h4 className="font-medium text-sm text-foreground">
+                          {tip.title}
+                        </h4>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <Badge variant="outline" className="text-xs">
+                            {tip.duration}
+                          </Badge>
+                          <Badge 
+                            variant="secondary" 
+                            className={`text-xs ${tip.intensity === "low" ? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300"}`}
+                          >
+                            {tip.intensity === "low" ? "저강도" : "중강도"}
+                          </Badge>
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground mb-2">
+                        {tip.description}
+                      </p>
+                      <div className="flex flex-wrap gap-1.5 mb-2">
+                        {tip.benefits.map((benefit, i) => (
+                          <span 
+                            key={i}
+                            className="inline-flex items-center gap-1 text-xs text-green-600 dark:text-green-400"
+                          >
+                            <CheckCircle2 className="h-3 w-3" />
+                            {benefit}
+                          </span>
+                        ))}
+                      </div>
+                      {tip.caution && (
+                        <div className="flex items-start gap-1.5 text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950 p-2 rounded">
+                          <AlertTriangle className="h-3 w-3 shrink-0 mt-0.5" />
+                          <span>{tip.caution}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
-                  <p className="text-xs text-muted-foreground mb-2">
-                    {tip.description}
-                  </p>
-                  <div className="flex flex-wrap gap-1.5 mb-2">
-                    {tip.benefits.map((benefit, i) => (
-                      <span 
-                        key={i}
-                        className="inline-flex items-center gap-1 text-xs text-green-600 dark:text-green-400"
-                      >
-                        <CheckCircle2 className="h-3 w-3" />
-                        {benefit}
-                      </span>
-                    ))}
-                  </div>
-                  {tip.caution && (
-                    <div className="flex items-start gap-1.5 text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950 p-2 rounded">
-                      <AlertTriangle className="h-3 w-3 shrink-0 mt-0.5" />
-                      <span>{tip.caution}</span>
-                    </div>
-                  )}
                 </CardContent>
               </Card>
             </motion.div>
