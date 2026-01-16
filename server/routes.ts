@@ -3,7 +3,7 @@ import type { Server } from "http";
 import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
-import { type PatientProfile, type AnalysisResult, type FoodItem } from "@shared/schema";
+import { type PatientProfile, type AnalysisResult, type FoodItem, type RecommendedFood } from "@shared/schema";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -35,7 +35,9 @@ export async function registerRoutes(
         return res.status(404).json({ message: "분석할 음식을 찾을 수 없습니다" });
       }
 
-      const result = analyzeFood(input.profile, food);
+      // 모든 음식 가져오기 (추천용)
+      const allFoods = await storage.getAllFoods();
+      const result = analyzeFood(input.profile, food, allFoods);
       res.json(result);
 
     } catch (err) {
@@ -52,26 +54,146 @@ export async function registerRoutes(
   return httpServer;
 }
 
+// --- Quick safety check for a food ---
+function quickAnalyze(profile: PatientProfile, food: FoodItem): "Safe" | "Caution" | "Limit" {
+  // 1순위: 칼륨
+  if (profile.ckdStage >= 3 && food.potassiumMg > 350) return "Limit";
+  if (profile.ckdStage >= 3 && food.potassiumMg > 200 && profile.serumPotassium && profile.serumPotassium >= 5.0) return "Limit";
+  
+  // 2순위: 인
+  if (profile.ckdStage >= 4 && food.phosphorusMg > 300) return "Limit";
+  
+  // 4순위: 나트륨
+  if (food.sodiumMg > 800) return "Limit";
+  
+  // 3순위: 당질 (Caution only)
+  if (profile.hasDm) {
+    const uncontrolledDm = profile.hba1c && profile.hba1c >= 8.0;
+    if (uncontrolledDm && food.giIndex >= 70) return "Caution";
+    if (food.sugarG >= 15) return "Caution";
+  }
+  
+  // 나트륨 Caution
+  if (food.sodiumMg > 400 && profile.ckdStage >= 3) return "Caution";
+  
+  return "Safe";
+}
+
+// --- Get recommendations (similar safe foods) ---
+function getRecommendations(profile: PatientProfile, currentFood: FoodItem, allFoods: FoodItem[]): RecommendedFood[] {
+  const recommendations: RecommendedFood[] = [];
+  
+  for (const food of allFoods) {
+    if (food.id === currentFood.id) continue; // 현재 음식 제외
+    
+    const status = quickAnalyze(profile, food);
+    if (status === "Safe") {
+      let reason = "";
+      
+      // 같은 카테고리면 우선
+      if (food.category === currentFood.category) {
+        reason = `같은 ${food.category} 카테고리`;
+      } else if (food.potassiumMg < 150) {
+        reason = `저칼륨 (${food.potassiumMg}mg)`;
+      } else if (food.giIndex < 50 && profile.hasDm) {
+        reason = `저GI 식품 (${food.giIndex})`;
+      } else {
+        reason = `균형 잡힌 영양소`;
+      }
+      
+      recommendations.push({
+        id: food.id,
+        foodName: food.foodName,
+        category: food.category,
+        reason
+      });
+      
+      if (recommendations.length >= 5) break; // 최대 5개
+    }
+  }
+  
+  return recommendations;
+}
+
+// --- Get alternatives (safer substitutes) ---
+function getAlternatives(profile: PatientProfile, currentFood: FoodItem, allFoods: FoodItem[]): RecommendedFood[] {
+  const alternatives: RecommendedFood[] = [];
+  const currentCategory = currentFood.category;
+  
+  // 같은 카테고리에서 안전한 대안 찾기
+  const sameCategoryFoods = allFoods.filter(f => f.category === currentCategory && f.id !== currentFood.id);
+  const otherFoods = allFoods.filter(f => f.category !== currentCategory && f.id !== currentFood.id);
+  
+  // 먼저 같은 카테고리에서 찾기
+  for (const food of sameCategoryFoods) {
+    const status = quickAnalyze(profile, food);
+    if (status === "Safe" || status === "Caution") {
+      let reason = "";
+      
+      if (food.potassiumMg < currentFood.potassiumMg) {
+        reason = `칼륨 낮음 (${food.potassiumMg}mg vs ${currentFood.potassiumMg}mg)`;
+      } else if (food.sodiumMg < currentFood.sodiumMg) {
+        reason = `나트륨 낮음 (${food.sodiumMg}mg vs ${currentFood.sodiumMg}mg)`;
+      } else if (food.giIndex < currentFood.giIndex && profile.hasDm) {
+        reason = `GI 낮음 (${food.giIndex} vs ${currentFood.giIndex})`;
+      } else {
+        reason = `더 안전한 ${food.category}`;
+      }
+      
+      alternatives.push({
+        id: food.id,
+        foodName: food.foodName,
+        category: food.category,
+        reason: status === "Safe" ? reason : `${reason} (주의 필요)`
+      });
+      
+      if (alternatives.length >= 3) break;
+    }
+  }
+  
+  // 부족하면 다른 카테고리에서 추가
+  if (alternatives.length < 5) {
+    for (const food of otherFoods) {
+      const status = quickAnalyze(profile, food);
+      if (status === "Safe") {
+        let reason = `${food.category}으로 대체 가능`;
+        
+        if (food.potassiumMg < 150) {
+          reason = `저칼륨 대안 (${food.potassiumMg}mg)`;
+        } else if (food.giIndex < 40 && profile.hasDm) {
+          reason = `저GI 대안 (${food.giIndex})`;
+        }
+        
+        alternatives.push({
+          id: food.id,
+          foodName: food.foodName,
+          category: food.category,
+          reason
+        });
+        
+        if (alternatives.length >= 5) break;
+      }
+    }
+  }
+  
+  return alternatives;
+}
+
 // --- Analysis Engine with Priority System ---
-// 우선순위: 1. 칼륨(K) > 2. 인(P) > 3. 당질(GI/Sugar) > 4. 나트륨(Na)
-function analyzeFood(profile: PatientProfile, food: FoodItem): AnalysisResult {
+function analyzeFood(profile: PatientProfile, food: FoodItem, allFoods: FoodItem[]): AnalysisResult {
   const issues: string[] = [];
   
-  // 각 우선순위별 판정 결과 저장
   type Verdict = "Safe" | "Caution" | "Limit";
   let potassiumVerdict: Verdict = "Safe";
   let phosphorusVerdict: Verdict = "Safe";
   let glucoseVerdict: Verdict = "Safe";
   let sodiumVerdict: Verdict = "Safe";
 
-  // ========================================
-  // 1순위: 칼륨 (K) 체크
-  // 규칙: CKD 3b 이상 (Stage >= 3) + 칼륨 350mg 초과 → "제한"
-  // ========================================
+  // 1순위: 칼륨 (K)
   const isHighK = food.potassiumMg > 350;
   const isModerateK = food.potassiumMg > 200;
   
-  if (profile.ckdStage >= 3) { // CKD 3b 이상 (3, 4, 5 단계)
+  if (profile.ckdStage >= 3) {
      if (isHighK) {
        potassiumVerdict = "Limit";
        issues.push(`칼륨 함량 높음 (${food.potassiumMg}mg): 신장에 부담이 됩니다.`);
@@ -81,10 +203,7 @@ function analyzeFood(profile: PatientProfile, food: FoodItem): AnalysisResult {
      }
   }
 
-  // ========================================
-  // 2순위: 인 (P) 체크
-  // 규칙: CKD 4-5 + 인 300mg 초과 → "제한"
-  // ========================================
+  // 2순위: 인 (P)
   const isHighP = food.phosphorusMg > 300;
   
   if (profile.ckdStage >= 4 && isHighP) {
@@ -92,10 +211,7 @@ function analyzeFood(profile: PatientProfile, food: FoodItem): AnalysisResult {
     issues.push(`인 함량 높음 (${food.phosphorusMg}mg): ${profile.ckdStage}단계에서는 배출이 어렵습니다.`);
   }
 
-  // ========================================
-  // 3순위: 당질 (GI/Sugar) 체크
-  // 규칙: HbA1c >= 8.0 + GI >= 70 → "주의"
-  // ========================================
+  // 3순위: 당질 (GI/Sugar)
   if (profile.hasDm) {
     const isHighGI = food.giIndex >= 70;
     const isHighSugar = food.sugarG >= 15;
@@ -112,9 +228,7 @@ function analyzeFood(profile: PatientProfile, food: FoodItem): AnalysisResult {
     }
   }
 
-  // ========================================
-  // 4순위: 나트륨 (Na) 체크
-  // ========================================
+  // 4순위: 나트륨 (Na)
   if (food.sodiumMg > 800) {
     sodiumVerdict = "Limit";
     issues.push(`나트륨 매우 높음 (${food.sodiumMg}mg): 혈압 상승과 부종을 유발합니다.`);
@@ -123,14 +237,10 @@ function analyzeFood(profile: PatientProfile, food: FoodItem): AnalysisResult {
     issues.push(`나트륨 함량 주의 (${food.sodiumMg}mg): 적게 섭취하세요.`);
   }
 
-  // ========================================
   // 우선순위 기반 최종 판정
-  // 상위 우선순위에서 "제한"이면 최종 결과는 제한
-  // ========================================
   let finalStatus: Verdict = "Safe";
   let primaryReason = "";
 
-  // 1순위: 칼륨
   if (potassiumVerdict === "Limit") {
     finalStatus = "Limit";
     primaryReason = "칼륨";
@@ -139,7 +249,6 @@ function analyzeFood(profile: PatientProfile, food: FoodItem): AnalysisResult {
     primaryReason = "칼륨";
   }
 
-  // 2순위: 인 (칼륨이 Limit이 아닌 경우에만 승격 가능)
   if (finalStatus !== "Limit") {
     if (phosphorusVerdict === "Limit") {
       finalStatus = "Limit";
@@ -150,7 +259,6 @@ function analyzeFood(profile: PatientProfile, food: FoodItem): AnalysisResult {
     }
   }
 
-  // 3순위: 당질 (상위 우선순위가 Limit이 아닌 경우에만 승격 가능)
   if (finalStatus !== "Limit") {
     if (glucoseVerdict === "Limit") {
       finalStatus = "Limit";
@@ -161,7 +269,6 @@ function analyzeFood(profile: PatientProfile, food: FoodItem): AnalysisResult {
     }
   }
 
-  // 4순위: 나트륨 (상위 우선순위가 Limit이 아닌 경우에만 승격 가능)
   if (finalStatus !== "Limit") {
     if (sodiumVerdict === "Limit") {
       finalStatus = "Limit";
@@ -172,9 +279,7 @@ function analyzeFood(profile: PatientProfile, food: FoodItem): AnalysisResult {
     }
   }
 
-  // ========================================
   // 교육용 메시지 생성
-  // ========================================
   let message = "";
   const foodName = food.foodName;
 
@@ -188,6 +293,16 @@ function analyzeFood(profile: PatientProfile, food: FoodItem): AnalysisResult {
 
   message = `[영양사 의견] ${message}`;
 
+  // 추천/대체 음식 생성
+  let recommendations: RecommendedFood[] | undefined;
+  let alternatives: RecommendedFood[] | undefined;
+
+  if (finalStatus === "Safe") {
+    recommendations = getRecommendations(profile, food, allFoods);
+  } else if (finalStatus === "Limit") {
+    alternatives = getAlternatives(profile, food, allFoods);
+  }
+
   return {
     status: finalStatus,
     summary: finalStatus === "Safe" ? "섭취 가능" : (finalStatus === "Caution" ? "주의 필요" : "제한 / 피하세요"),
@@ -199,6 +314,8 @@ function analyzeFood(profile: PatientProfile, food: FoodItem): AnalysisResult {
       sodium: food.sodiumMg,
       gi: food.giIndex
     },
-    educationalMessage: message
+    educationalMessage: message,
+    recommendations,
+    alternatives
   };
 }

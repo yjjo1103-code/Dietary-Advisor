@@ -41,6 +41,16 @@ export const patientProfileSchema = z.object({
 
 export type PatientProfile = z.infer<typeof patientProfileSchema>;
 
+// --- Recommended Food Schema ---
+export const recommendedFoodSchema = z.object({
+  id: z.number(),
+  foodName: z.string(),
+  category: z.string(),
+  reason: z.string(),
+});
+
+export type RecommendedFood = z.infer<typeof recommendedFoodSchema>;
+
 // --- Analysis Result Schema ---
 export const analysisResultSchema = z.object({
   status: z.enum(["Safe", "Caution", "Limit"]),
@@ -54,6 +64,8 @@ export const analysisResultSchema = z.object({
     gi: z.number(),
   }),
   educationalMessage: z.string(), // Nurse-like tone explanation
+  recommendations: z.array(recommendedFoodSchema).optional(), // 추천 음식 (Safe 일 때)
+  alternatives: z.array(recommendedFoodSchema).optional(), // 대체 음식 (Limit 일 때)
 });
 
 export type AnalysisResult = z.infer<typeof analysisResultSchema>;

@@ -2,11 +2,12 @@ import { useState } from "react";
 import { PatientProfileForm } from "@/components/patient-profile-form";
 import { FoodSearch } from "@/components/food-search";
 import { AnalysisResultCard } from "@/components/analysis-result.tsx";
-import { useAnalyzeFood } from "@/hooks/use-foods";
+import { useAnalyzeFood, fetchFoodById } from "@/hooks/use-foods";
 import { type PatientProfile, type FoodItem, type AnalysisResult } from "@shared/schema";
 import { Button } from "@/components/ui-kit";
 import { ChevronRight, Utensils, AlertCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Dashboard() {
   const [profile, setProfile] = useState<PatientProfile | null>(null);
@@ -34,6 +35,31 @@ export default function Dashboard() {
   const handleFoodSelect = (food: FoodItem) => {
     setSelectedFood(food);
     setAnalysisResult(null);
+  };
+
+  const { toast } = useToast();
+
+  const handleRecommendationSelect = async (foodId: number) => {
+    if (!profile) return;
+    
+    try {
+      const food = await fetchFoodById(foodId);
+      setSelectedFood(food);
+      
+      const result = await analyzeMutation.mutateAsync({
+        foodId: food.id,
+        profile,
+      });
+      setAnalysisResult(result);
+      
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      toast({
+        title: "음식 변경됨",
+        description: `${food.foodName}으로 변경되었습니다.`,
+      });
+    } catch (error) {
+      console.error("Failed to select recommendation", error);
+    }
   };
 
   return (
@@ -124,7 +150,7 @@ export default function Dashboard() {
                     <span className="bg-primary text-primary-foreground w-6 h-6 rounded-full flex items-center justify-center text-sm">2</span>
                     분석 결과
                   </h2>
-                  <AnalysisResultCard result={analysisResult} />
+                  <AnalysisResultCard result={analysisResult} onSelectFood={handleRecommendationSelect} />
                 </section>
               )}
             </AnimatePresence>

@@ -3,6 +3,7 @@ import { type FoodItem, type InsertFood } from "@shared/schema";
 export interface IStorage {
   searchFoods(query: string): Promise<FoodItem[]>;
   getFood(id: number): Promise<FoodItem | undefined>;
+  getAllFoods(): Promise<FoodItem[]>;
   createFood(food: InsertFood): Promise<FoodItem>;
 }
 
@@ -27,6 +28,10 @@ export class MemStorage implements IStorage {
 
   async getFood(id: number): Promise<FoodItem | undefined> {
     return this.foods.get(id);
+  }
+
+  async getAllFoods(): Promise<FoodItem[]> {
+    return Array.from(this.foods.values());
   }
 
   async createFood(insertFood: InsertFood): Promise<FoodItem> {

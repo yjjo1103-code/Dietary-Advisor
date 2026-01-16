@@ -1,6 +1,6 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { api, buildUrl, type AnalysisResponse, type AnalyzeRequest } from "@shared/routes";
-import { z } from "zod";
+import { type FoodItem } from "@shared/schema";
 
 export function useFoods(searchQuery?: string) {
   return useQuery({
@@ -15,6 +15,13 @@ export function useFoods(searchQuery?: string) {
       return api.foods.list.responses[200].parse(await res.json());
     },
   });
+}
+
+export async function fetchFoodById(id: number): Promise<FoodItem> {
+  const url = buildUrl(api.foods.get.path, { id });
+  const res = await fetch(url, { credentials: "include" });
+  if (!res.ok) throw new Error("Failed to fetch food");
+  return res.json();
 }
 
 export function useAnalyzeFood() {
