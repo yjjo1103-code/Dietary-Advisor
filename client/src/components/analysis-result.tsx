@@ -3,12 +3,7 @@ import { Card, CardContent } from "./ui-kit";
 import { AlertTriangle, CheckCircle, Info, XCircle, Stethoscope, Activity, Utensils, RefreshCw } from "lucide-react";
 import { motion } from "framer-motion";
 import { Badge } from "./ui/badge";
-
-import foodImg1 from "@assets/stock_images/korean_food_healthy__e50e48e7.jpg";
-import foodImg2 from "@assets/stock_images/korean_food_healthy__439ee99c.jpg";
-import foodImg3 from "@assets/stock_images/korean_food_healthy__963dea6c.jpg";
-
-const foodImages = [foodImg1, foodImg2, foodImg3];
+import { getFoodImage } from "@/lib/food-images";
 
 interface AnalysisResultCardProps {
   result: AnalysisResult;
@@ -119,7 +114,7 @@ export function AnalysisResultCard({ result, onSelectFood }: AnalysisResultCardP
         <div className="relative">
           <div className="absolute inset-0">
             <img 
-              src={foodImages[(result.foodName?.length ?? 0) % foodImages.length]} 
+              src={getFoodImage(result.foodName ?? "")} 
               alt={result.foodName ?? "음식"}
               className="w-full h-full object-cover"
             />
