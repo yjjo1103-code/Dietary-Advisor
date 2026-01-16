@@ -1,11 +1,13 @@
 import { useSavedProfiles, useDeleteProfile } from "@/hooks/use-foods";
 import { type SavedProfile, type PatientProfile } from "@shared/schema";
 import { Card, CardContent, Button } from "./ui-kit";
-import { Calendar, User, Trash2, Clock, Activity, Loader2 } from "lucide-react";
+import { Calendar, User, Trash2, Clock, Loader2, List, TrendingUp } from "lucide-react";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 import { motion, AnimatePresence } from "framer-motion";
 import { Badge } from "./ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+import { ProfileTrendsChart } from "./profile-trends-chart";
 
 interface SavedProfilesProps {
   onLoadProfile: (profile: PatientProfile) => void;
@@ -64,81 +66,100 @@ export function SavedProfiles({ onLoadProfile }: SavedProfilesProps) {
   }
 
   return (
-    <div className="space-y-3">
-      <AnimatePresence>
-        {profiles.map((saved, idx) => (
-          <motion.div
-            key={saved.id}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ delay: idx * 0.05 }}
-          >
-            <Card 
-              className="cursor-pointer hover:border-primary/50 transition-all hover-elevate"
-              onClick={() => handleLoad(saved)}
-              data-testid={`saved-profile-${saved.id}`}
-            >
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <User className="h-4 w-4 text-primary" />
-                      <span className="font-medium text-foreground truncate">
-                        {saved.profileName}
-                      </span>
-                    </div>
-                    
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2">
-                      <Clock className="h-3 w-3" />
-                      <span>
-                        {format(new Date(saved.createdAt), "yyyy년 M월 d일 HH:mm", { locale: ko })}
-                      </span>
-                    </div>
+    <Tabs defaultValue="list" className="w-full">
+      <TabsList className="grid w-full grid-cols-2 mb-4">
+        <TabsTrigger value="list" className="flex items-center gap-2" data-testid="tab-profile-list">
+          <List className="h-4 w-4" />
+          목록
+        </TabsTrigger>
+        <TabsTrigger value="chart" className="flex items-center gap-2" data-testid="tab-profile-chart">
+          <TrendingUp className="h-4 w-4" />
+          그래프
+        </TabsTrigger>
+      </TabsList>
 
-                    <div className="flex flex-wrap gap-1.5">
-                      <Badge variant="secondary" className="text-xs">
-                        CKD {saved.ckdStage}단계
-                      </Badge>
-                      {saved.hasDm === 1 && (
-                        <Badge variant="secondary" className="text-xs">
-                          당뇨
-                        </Badge>
-                      )}
-                      {saved.hba1c && (
-                        <Badge variant="outline" className="text-xs">
-                          HbA1c {saved.hba1c}%
-                        </Badge>
-                      )}
-                      {saved.eGFR && (
-                        <Badge variant="outline" className="text-xs">
-                          eGFR {saved.eGFR}
-                        </Badge>
-                      )}
-                      {saved.serumPotassium && (
-                        <Badge variant="outline" className="text-xs">
-                          K {saved.serumPotassium}
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
+      <TabsContent value="list" className="mt-0">
+        <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
+          <AnimatePresence>
+            {profiles.map((saved, idx) => (
+              <motion.div
+                key={saved.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ delay: idx * 0.05 }}
+              >
+                <Card 
+                  className="cursor-pointer hover:border-primary/50 transition-all hover-elevate"
+                  onClick={() => handleLoad(saved)}
+                  data-testid={`saved-profile-${saved.id}`}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <User className="h-4 w-4 text-primary" />
+                          <span className="font-medium text-foreground truncate">
+                            {saved.profileName}
+                          </span>
+                        </div>
+                        
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground mb-2">
+                          <Clock className="h-3 w-3" />
+                          <span>
+                            {format(new Date(saved.createdAt), "yyyy년 M월 d일 HH:mm", { locale: ko })}
+                          </span>
+                        </div>
 
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="shrink-0 text-muted-foreground hover:text-destructive"
-                    onClick={(e) => handleDelete(saved.id, e)}
-                    disabled={deleteMutation.isPending}
-                    data-testid={`delete-profile-${saved.id}`}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        ))}
-      </AnimatePresence>
-    </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          <Badge variant="secondary" className="text-xs">
+                            CKD {saved.ckdStage}단계
+                          </Badge>
+                          {saved.hasDm === 1 && (
+                            <Badge variant="secondary" className="text-xs">
+                              당뇨
+                            </Badge>
+                          )}
+                          {saved.hba1c && (
+                            <Badge variant="outline" className="text-xs">
+                              HbA1c {saved.hba1c}%
+                            </Badge>
+                          )}
+                          {saved.eGFR && (
+                            <Badge variant="outline" className="text-xs">
+                              eGFR {saved.eGFR}
+                            </Badge>
+                          )}
+                          {saved.serumPotassium && (
+                            <Badge variant="outline" className="text-xs">
+                              K {saved.serumPotassium}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="shrink-0 text-muted-foreground hover:text-destructive"
+                        onClick={(e) => handleDelete(saved.id, e)}
+                        disabled={deleteMutation.isPending}
+                        data-testid={`delete-profile-${saved.id}`}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
+      </TabsContent>
+
+      <TabsContent value="chart" className="mt-0">
+        <ProfileTrendsChart profiles={profiles} />
+      </TabsContent>
+    </Tabs>
   );
 }
