@@ -3,6 +3,7 @@ import { PatientProfileForm } from "@/components/patient-profile-form";
 import { FoodSearch } from "@/components/food-search";
 import { AnalysisResultCard } from "@/components/analysis-result.tsx";
 import { HealthTipsSection } from "@/components/health-tips-section";
+import { ClinicalValuesGuide } from "@/components/clinical-values-guide";
 import { useAnalyzeFood, fetchFoodById } from "@/hooks/use-foods";
 import { type PatientProfile, type FoodItem, type AnalysisResult } from "@shared/schema";
 import { Button } from "@/components/ui-kit";
@@ -159,6 +160,11 @@ export default function Dashboard() {
             {/* Health Tips Section */}
             <section className="bg-white dark:bg-card rounded-2xl p-6 border shadow-sm">
               <HealthTipsSection />
+            </section>
+
+            {/* Clinical Values Guide */}
+            <section className="bg-white dark:bg-card rounded-2xl p-6 border shadow-sm">
+              <ClinicalValuesGuide />
             </section>
 
           </div>
