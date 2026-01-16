@@ -25,14 +25,12 @@ export default function Dashboard() {
       });
       setAnalysisResult(result);
       
-      // Smooth scroll to result on mobile
       window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
     } catch (error) {
       console.error("Analysis failed", error);
     }
   };
 
-  // Reset analysis when food changes
   const handleFoodSelect = (food: FoodItem) => {
     setSelectedFood(food);
     setAnalysisResult(null);
@@ -41,15 +39,15 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* Header */}
-      <header className="bg-white border-b sticky top-0 z-10">
+      <header className="bg-white dark:bg-card border-b sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="bg-primary/10 p-2 rounded-lg text-primary">
               <Utensils className="h-6 w-6" />
             </div>
             <div>
-              <h1 className="text-xl font-bold font-display leading-tight text-primary">NutriCare</h1>
-              <p className="text-xs text-muted-foreground">DM & CKD Dietary Support</p>
+              <h1 className="text-xl font-bold font-display leading-tight text-primary">뉴트리케어</h1>
+              <p className="text-xs text-muted-foreground">당뇨·신장질환 식이관리 도우미</p>
             </div>
           </div>
           <div className="text-xs font-medium bg-secondary px-3 py-1 rounded-full text-secondary-foreground hidden sm:block">
@@ -76,9 +74,9 @@ export default function Dashboard() {
             <section>
               <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
                 <span className="bg-primary text-primary-foreground w-6 h-6 rounded-full flex items-center justify-center text-sm">1</span>
-                Select Food Item
+                음식 선택
               </h2>
-              <div className="bg-white rounded-2xl p-6 border shadow-sm">
+              <div className="bg-white dark:bg-card rounded-2xl p-6 border shadow-sm">
                 <FoodSearch 
                   onSelectFood={handleFoodSelect} 
                   selectedFoodId={selectedFood?.id}
@@ -101,8 +99,9 @@ export default function Dashboard() {
                     isLoading={analyzeMutation.isPending}
                     disabled={!profile}
                     className="w-full sm:w-auto text-lg shadow-lg shadow-primary/20"
+                    data-testid="button-analyze"
                   >
-                    {!profile ? "Complete Profile First" : "Analyze Safety"}
+                    {!profile ? "프로필을 먼저 입력하세요" : "안전성 분석하기"}
                     {profile && <ChevronRight className="ml-2 h-5 w-5" />}
                   </Button>
                 </motion.div>
@@ -123,7 +122,7 @@ export default function Dashboard() {
                 <section>
                   <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
                     <span className="bg-primary text-primary-foreground w-6 h-6 rounded-full flex items-center justify-center text-sm">2</span>
-                    Clinical Analysis
+                    분석 결과
                   </h2>
                   <AnalysisResultCard result={analysisResult} />
                 </section>
