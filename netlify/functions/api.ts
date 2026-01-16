@@ -124,8 +124,12 @@ const foods: FoodItem[] = initialFoods.map((food, index) => ({
   id: index + 1,
 }));
 
-let profiles: SavedProfile[] = [];
-let profileIdCounter = 1;
+let profiles: SavedProfile[] = [
+  { id: 1, name: "김철수 (경증 CKD+당뇨)", ckdStage: 2, hasDm: true, hba1c: 7.2, eGFR: 68, serumPotassium: 4.2, createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000) },
+  { id: 2, name: "이영희 (중등도 CKD)", ckdStage: 3, hasDm: false, hba1c: 5.6, eGFR: 42, serumPotassium: 4.8, createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000) },
+  { id: 3, name: "박민호 (중증 CKD+당뇨)", ckdStage: 4, hasDm: true, hba1c: 8.8, eGFR: 22, serumPotassium: 5.2, createdAt: new Date() },
+];
+let profileIdCounter = 4;
 
 function quickAnalyze(profile: PatientProfile, food: FoodItem): "Safe" | "Caution" | "Limit" {
   if (profile.ckdStage >= 3 && food.potassiumMg > 350) return "Limit";
